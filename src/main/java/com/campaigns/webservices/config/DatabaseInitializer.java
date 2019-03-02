@@ -29,15 +29,16 @@ public class DatabaseInitializer {
         String insertPlatformQuery = "INSERT INTO PLATFORM" + "(name, ad_id) values" + "(?,?)";
         String selectPlatformQuery = "select * from PLATFORM";
         
-        String createAdQuery = "CREATE TABLE ADS(id int primary key, name varchar(255), status int, asset_url varchar(255), campaign_id INT,"
+        String createAdQuery = "CREATE TABLE ADS(id int primary key auto_increment, name varchar(255), status int, asset_url varchar(255), campaign_id INT,"
                 + " FOREIGN KEY (campaign_id)  REFERENCES CAMPAIGNS (id));";
         String dropAdQuery = "DROP TABLE IF EXISTS AD";
-        String insertAdQuery = "INSERT INTO ADS" + "(id, name, status, asset_url, campaign_id) values" + "(?,?,?,?,?)";
+        String insertAdQuery = "INSERT INTO ADS" + "(name, status, asset_url, campaign_id) values" + "(?,?,?,?)";
         String selectAdQuery = "select * from ADS";
         
-        String createCampaignQuery = "CREATE TABLE CAMPAIGNS(id int primary key, name varchar(255), status int, start_date timestamp, end_date timestamp)";         
+        String createCampaignQuery = "CREATE TABLE CAMPAIGNS(id int primary key auto_increment, name varchar(255), status int, start_date timestamp, "
+                + "end_date timestamp)";         
         String dropCampaignsQuery = "DROP TABLE IF EXISTS CAMPAIGNS";
-        String insertCampaignQuery = "INSERT INTO CAMPAIGNS" + "(id, name, status, start_date, end_date) values" + "(?,?,?,?,?)";
+        String insertCampaignQuery = "INSERT INTO CAMPAIGNS" + "(name, status, start_date, end_date) values" + "(?,?,?,?)";
         String selectCampaignQuery = "select * from CAMPAIGNS";
         
         try {
@@ -67,24 +68,24 @@ public class DatabaseInitializer {
             createPlatformStatement.execute();
             createPlatformStatement.close();            
 
-            executeInserCampaignStatement(insertCampaignQuery, con, 1, "Inna", 1, new Timestamp(1920,1,1,1,1,1,1), new Timestamp(1920,1,1,1,1,1,1));
-            executeInserCampaignStatement(insertCampaignQuery, con, 2, "Patti", 2, new Timestamp(1920,1,1,1,1,1,1), new Timestamp(1920,1,1,1,1,1,1));
-            executeInserCampaignStatement(insertCampaignQuery, con, 3, "Faith", 3, new Timestamp(1920,1,1,1,1,1,1), new Timestamp(1920,1,1,1,1,1,1));
-            executeInsertAdStatement(insertAdQuery, con, 1, "Nadia", 1, "Nadia's asset", 1);
-            executeInsertAdStatement(insertAdQuery, con, 2, "Greta", 1, "Greta's asset", 1);
-            executeInsertAdStatement(insertAdQuery, con, 3, "Lussi", 2, "Lussi's asset", 2);
-            executeInsertAdStatement(insertAdQuery, con, 4, "Maria", 2, "Maria's asset", 2);
-            executeInsertAdStatement(insertAdQuery, con, 5, "Hope", 3, "Hope's asset", 3);
-            executeInsertAdStatement(insertAdQuery, con, 6, "Jane", 3, "Jane's asset", 3);
-            executeInsertPlatformStatement(insertPlatformQuery, con, 0, 1);
-            executeInsertPlatformStatement(insertPlatformQuery, con, 0, 2);
-            executeInsertPlatformStatement(insertPlatformQuery, con, 0, 3);
-            executeInsertPlatformStatement(insertPlatformQuery, con, 1, 4);
-            executeInsertPlatformStatement(insertPlatformQuery, con, 1, 5);
-            executeInsertPlatformStatement(insertPlatformQuery, con, 1, 6);
-            executeInsertPlatformStatement(insertPlatformQuery, con, 2, 1);
-            executeInsertPlatformStatement(insertPlatformQuery, con, 2, 2);
-            executeInsertPlatformStatement(insertPlatformQuery, con, 2, 3);
+            int firstCamId = executeInserCampaignStatement(insertCampaignQuery, con, "Inna", 1, new Timestamp(1920,1,1,1,1,1,1), new Timestamp(1920,1,1,1,1,1,1));
+            int secondCamId = executeInserCampaignStatement(insertCampaignQuery, con, "Patti", 2, new Timestamp(1920,1,1,1,1,1,1), new Timestamp(1920,1,1,1,1,1,1));
+            int thirdCamId = executeInserCampaignStatement(insertCampaignQuery, con, "Faith", 3, new Timestamp(1920,1,1,1,1,1,1), new Timestamp(1920,1,1,1,1,1,1));
+            int firstAdId = executeInsertAdStatement(insertAdQuery, con, "Nadia", 1, "Nadia's asset", firstCamId);
+            int secondAdId = executeInsertAdStatement(insertAdQuery, con, "Greta", 1, "Greta's asset", firstCamId);
+            int thirdAdId = executeInsertAdStatement(insertAdQuery, con, "Lussi", 2, "Lussi's asset", secondCamId);
+            int forthAdId = executeInsertAdStatement(insertAdQuery, con, "Maria", 2, "Maria's asset", secondCamId);
+            int fifthAdId = executeInsertAdStatement(insertAdQuery, con, "Hope", 3, "Hope's asset", thirdCamId);
+            int sixthAdId = executeInsertAdStatement(insertAdQuery, con, "Jane", 3, "Jane's asset", thirdCamId);
+            executeInsertPlatformStatement(insertPlatformQuery, con, 0, firstAdId);
+            executeInsertPlatformStatement(insertPlatformQuery, con, 0, secondAdId);
+            executeInsertPlatformStatement(insertPlatformQuery, con, 0, thirdAdId);
+            executeInsertPlatformStatement(insertPlatformQuery, con, 1, forthAdId);
+            executeInsertPlatformStatement(insertPlatformQuery, con, 1, fifthAdId);
+            executeInsertPlatformStatement(insertPlatformQuery, con, 1, sixthAdId);
+            executeInsertPlatformStatement(insertPlatformQuery, con, 2, firstAdId);
+            executeInsertPlatformStatement(insertPlatformQuery, con, 2, secondAdId);
+            executeInsertPlatformStatement(insertPlatformQuery, con, 2, thirdAdId);
             
             selectAllPlatforms(selectPlatformQuery, con);
             selectAllAds(selectAdQuery, con);
@@ -104,7 +105,7 @@ public class DatabaseInitializer {
         }
     }
     
-    private static void executeInsertPlatformStatement(String query, Connection connection, int id, int ad_id) throws SQLException {
+    public static void executeInsertPlatformStatement(String query, Connection connection, int id, int ad_id) throws SQLException {
         PreparedStatement insertStatement = null;
         insertStatement = connection.prepareStatement(query);
         insertStatement.setInt(1, id);
@@ -113,33 +114,45 @@ public class DatabaseInitializer {
         insertStatement.close();
     }
     
-    private static void executeInsertAdStatement(String query, Connection connection, int id, String name, int status, String assetUrl,
-            int campaign_id) throws SQLException {
+    public static int executeInsertAdStatement(String query, Connection connection, String name, int status, String assetUrl, int campaign_id) throws SQLException {
+        int id = 0;
+        String[] columnNames = new String[] { "id" };
         PreparedStatement insertStatement = null;
-        insertStatement = connection.prepareStatement(query);
-        insertStatement.setInt(1, id);
-        insertStatement.setString(2, name);
-        insertStatement.setInt(3, status);
-        insertStatement.setString(4, assetUrl);
-        insertStatement.setInt(5, campaign_id);
-        insertStatement.executeUpdate();
+        insertStatement = connection.prepareStatement(query, columnNames);
+        insertStatement.setString(1, name);
+        insertStatement.setInt(2, status);
+        insertStatement.setString(3, assetUrl);
+        insertStatement.setInt(4, campaign_id);
+        if (insertStatement.executeUpdate() > 0) {
+            java.sql.ResultSet generatedKeys = insertStatement.getGeneratedKeys();
+            if ( generatedKeys.next() ) {
+                id = generatedKeys.getInt(1);
+            }
+        }
         insertStatement.close();
+        return id;
     }
     
-    private static void executeInserCampaignStatement(String query, Connection connection, int id, String name, int status, Timestamp startDate, 
-            Timestamp endDate) throws SQLException {
+    public static int executeInserCampaignStatement(String query, Connection connection, String name, int status, Timestamp startDate, Timestamp endDate) throws SQLException {
+        int id = 0;
+        String[] columnNames = new String[] { "id" };
         PreparedStatement insertStatement = null;
-        insertStatement = connection.prepareStatement(query);
-        insertStatement.setInt(1, id);
-        insertStatement.setString(2, name);
-        insertStatement.setInt(3, status);
-        insertStatement.setTimestamp(4, startDate);
-        insertStatement.setTimestamp(5, endDate);
-        insertStatement.executeUpdate();
+        insertStatement = connection.prepareStatement(query, columnNames);
+        insertStatement.setString(1, name);
+        insertStatement.setInt(2, status);
+        insertStatement.setTimestamp(3, startDate);
+        insertStatement.setTimestamp(4, endDate);
+        if (insertStatement.executeUpdate() > 0) {
+            java.sql.ResultSet generatedKeys = insertStatement.getGeneratedKeys();
+            if ( generatedKeys.next() ) {
+                id = generatedKeys.getInt(1);
+            }
+        }
         insertStatement.close();
+        return id;
     }
     
-    private static void selectAllCampaigns(String query, Connection connection) throws SQLException {
+    public static void selectAllCampaigns(String query, Connection connection) throws SQLException {
         PreparedStatement selectStatement = null;
         selectStatement = connection.prepareStatement(query);
         ResultSet rs = selectStatement.executeQuery();
@@ -151,7 +164,7 @@ public class DatabaseInitializer {
         selectStatement.close();
     }
     
-    private static void selectAllAds(String query, Connection connection) throws SQLException {
+    public static void selectAllAds(String query, Connection connection) throws SQLException {
         PreparedStatement selectStatement = null;
         selectStatement = connection.prepareStatement(query);
         ResultSet rs = selectStatement.executeQuery();
@@ -163,7 +176,7 @@ public class DatabaseInitializer {
         selectStatement.close();
     }
     
-    private static void selectAllPlatforms(String query, Connection connection) throws SQLException {
+    public static void selectAllPlatforms(String query, Connection connection) throws SQLException {
         PreparedStatement selectStatement = null;
         selectStatement = connection.prepareStatement(query);
         ResultSet rs = selectStatement.executeQuery();

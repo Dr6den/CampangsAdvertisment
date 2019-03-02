@@ -11,7 +11,7 @@ import java.sql.SQLException;
  */
 public class H2Connector implements IJdbcConnector {
     private final String DB_DRIVER = "org.h2.Driver";
-    private final String DB_CONNECTION = "jdbc:h2:mem:test;DB_CLOSE_ON_EXIT=FALSE";
+    private final String DB_CONNECTION = "jdbc:h2:~/test;DB_CLOSE_DELAY=-1";
     private final String DB_USER = "";
     private final String DB_PASSWORD = "";
 

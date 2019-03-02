@@ -65,6 +65,14 @@ public class Campaign {
 
     public Campaign() {
     }
+
+    public Campaign(String name, Status status, Timestamp startDate, Timestamp endDate, List<Ad> ads) {
+        this.name = name;
+        this.status = status;
+        this.startDate = startDate;
+        this.endDate = endDate;
+        this.ads = ads;
+    }
     
     
 }

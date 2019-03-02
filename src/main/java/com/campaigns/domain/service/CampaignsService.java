@@ -17,6 +17,6 @@ public class CampaignsService {
     }
     
     public Campaign getCampaign(int id) {
-        return dao.getCampaign(id);
+        return dao.getCampaignById(id);
     }
 }

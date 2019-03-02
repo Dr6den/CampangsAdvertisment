@@ -28,12 +28,35 @@ public class CampaignsDao {
     public CampaignsDao(IJdbcConnector con, DatabaseInitializer initializer) {
         this.connector = con;
         this.databaseInitializer = initializer;
-        initializer.createDatabase();
+        //initializer.createDatabase();
     }
     
-    public Campaign getCampaign(int id) {
-        Campaign c = new Campaign();c.setName("Nadia a");
-        return c;
+    public Campaign getCampaignById(int id) {
+        Campaign cam = null;
+        try {
+            String query = "select * from CAMPAIGNS where id = ?";
+            Connection con = connector.getConnection();
+            PreparedStatement selectStatement = con.prepareStatement(query);
+            selectStatement.setInt(1, id);
+            ResultSet rs = selectStatement.executeQuery();
+            
+            while (rs.next()) {
+                cam = new Campaign();
+                cam.setId(id);
+                cam.setName(rs.getString("name"));
+                cam.setStatus(Status.fromInteger(rs.getInt("status")));
+                cam.setStartDate(rs.getTimestamp("start_date"));
+                cam.setEndDate(rs.getTimestamp("end_date"));
+            }
+            selectStatement.close();
+            if(cam != null) {
+                cam.setAds(getAdsForCampaign(id));
+            }
+            con.close();
+        } catch (SQLException ex) {
+            Logger.getLogger(CampaignsDao.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        return cam;
     }
     
     public Ad getAdById(int id) {
@@ -53,12 +76,40 @@ public class CampaignsDao {
                 ad.setAsserUrl(rs.getString("asset_url"));
             }
             selectStatement.close();
-            ad.setPlatforms(getPlatformsForAd(id, con));
+            if (ad != null) {
+                ad.setPlatforms(getPlatformsForAd(id, con));
+            }
             con.close();
         } catch (SQLException ex) {
             Logger.getLogger(CampaignsDao.class.getName()).log(Level.SEVERE, null, ex);
         }
         return ad;
+    }
+    
+    public List<Ad> getAdsForCampaign(int id) {
+        List<Ad> ads = new ArrayList<>();
+        try {
+            String query = "select * from ADS where campaign_id = ?";
+            Connection con = connector.getConnection();
+            PreparedStatement selectStatement = con.prepareStatement(query);
+            selectStatement.setInt(1, id);
+            ResultSet rs = selectStatement.executeQuery();
+            
+            while (rs.next()) {
+                Ad ad = new Ad();
+                ad.setId(rs.getInt("id"));
+                ad.setName(rs.getString("name"));
+                ad.setStatus(Status.fromInteger(rs.getInt("status")));
+                ad.setAsserUrl(rs.getString("asset_url"));
+                ad.setPlatforms(getPlatformsForAd(ad.getId(), con));
+                ads.add(ad);
+            }
+            selectStatement.close();            
+            con.close();
+        } catch (SQLException ex) {
+            Logger.getLogger(CampaignsDao.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        return ads;
     }
     
     private List<Platform> getPlatformsForAd(int adId, Connection con) throws SQLException {
@@ -74,7 +125,87 @@ public class CampaignsDao {
         selectStatement.close();
         return platforms;
     }
+    
+    public int updateCampaign(Campaign cam) {
+        int result = 0;
+        try {            
+            Connection con = connector.getConnection();
+            String query = "UPDATE CAMPAIGNS SET name = ?, status = ?, start_date = ?, end_date = ? where id = ?";
+            
+            PreparedStatement updateStatement = null;
+            updateStatement = con.prepareStatement(query);
+            updateStatement.setString(1, cam.getName());
+            updateStatement.setInt(2, cam.getStatus().getValue());
+            updateStatement.setTimestamp(3, cam.getStartDate());
+            updateStatement.setTimestamp(4, cam.getEndDate());
+            updateStatement.setInt(5, cam.getId());
+            
+            result = updateStatement.executeUpdate();
+            updateStatement.close();
+            updateAds(cam.getId(), cam.getAds());
+            con.commit();
+            con.close();            
+        } catch (SQLException ex) {
+            Logger.getLogger(CampaignsDao.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        return result;
+    }
 
+    public int updateAd(Ad ad, int campaignId) {
+        int result = 0;
+        try {            
+            Connection con = connector.getConnection();
+            String query = "UPDATE ADS SET name = ?, status = ?, asset_url = ?, campaign_id = ? where id = ?";
+            
+            PreparedStatement updateStatement = null;
+            updateStatement = con.prepareStatement(query);
+            updateStatement.setString(1, ad.getName());
+            updateStatement.setInt(2, ad.getStatus().getValue());
+            updateStatement.setString(3, ad.getAsserUrl());
+            updateStatement.setInt(4, campaignId);
+            updateStatement.setInt(5, ad.getId());
+            
+            result = updateStatement.executeUpdate();
+            updateStatement.close();
+            dropPlatformsForSpecifiedAd(ad.getId(), con);
+            insertPlatforms(ad.getId(), ad.getPlatforms(), con);
+            con.commit();
+            con.close();            
+        } catch (SQLException ex) {
+            Logger.getLogger(CampaignsDao.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        return result;
+    }
+    
+    public int insertCampaign(Campaign cam) {
+        int id = 0;
+        try {            
+            String[] columnNames = new String[] { "id" };
+            Connection con = connector.getConnection();
+            String query = "INSERT INTO CAMPAIGNS" + "(name, status, start_date, end_date) values" + "(?,?,?,?)";
+            
+            PreparedStatement insertStatement = null;
+            insertStatement = con.prepareStatement(query, columnNames);
+            insertStatement.setString(1, cam.getName());
+            insertStatement.setInt(2, cam.getStatus().getValue());
+            insertStatement.setTimestamp(3, cam.getStartDate());
+            insertStatement.setTimestamp(4, cam.getEndDate());
+            if (insertStatement.executeUpdate() > 0) {
+                java.sql.ResultSet generatedKeys = insertStatement.getGeneratedKeys();
+                if ( generatedKeys.next() ) {
+                    id = generatedKeys.getInt(1);
+                }
+            }
+            insertStatement.close();
+            insertAds(id, cam.getAds());
+            con.commit();
+            con.close();            
+        } catch (SQLException ex) {
+            Logger.getLogger(CampaignsDao.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        return id;
+    }
+    
     public int insertAd(Ad ad, int campaignId) {
         int id = 0;
         try {            
@@ -104,6 +235,18 @@ public class CampaignsDao {
         return id;
     }
     
+    private void insertAds(int id, List<Ad> ads) {
+        ads.forEach((Ad ad) -> insertAd(ad, id));
+    }
+    
+    private void deleteAds(List<Ad> ads) {
+        ads.forEach((Ad ad) -> deleteAd(ad.getId()));
+    }
+    
+    private void updateAds(int id, List<Ad> ads) {
+        ads.forEach((Ad ad) -> updateAd(ad, id));
+    }
+    
     private void insertPlatforms(int ad_id, List<Platform> platforms, Connection con) {
         platforms.forEach((Platform p) -> executeInsertPlatformStatement(con, p.getValue(), ad_id));
     }
@@ -116,6 +259,68 @@ public class CampaignsDao {
             insertStatement.setInt(2, ad_id);
             insertStatement.executeUpdate();
             insertStatement.close();
+            connection.commit();
+        } catch (SQLException ex) {
+            Logger.getLogger(CampaignsDao.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
+    
+    public void dropPlatformsForSpecifiedAd(int adId, Connection connection) {
+        try {
+            String query = "DELETE FROM PLATFORM WHERE ad_id = ?";
+            PreparedStatement insertStatement = connection.prepareStatement(query);
+            insertStatement.setInt(1, adId);
+            insertStatement.executeUpdate();
+            insertStatement.close();
+            connection.commit();
+        } catch (SQLException ex) {
+            Logger.getLogger(CampaignsDao.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
+    
+    public void deleteAd(int id) {
+        try {
+            Connection con = connector.getConnection();
+            dropPlatformsForSpecifiedAd(id, con);
+            String query = "DELETE FROM ADS WHERE id = ?";
+            PreparedStatement insertStatement = con.prepareStatement(query);
+            insertStatement.setInt(1, id);
+            insertStatement.executeUpdate();
+            insertStatement.close();
+            con.commit();            
+        } catch (SQLException ex) {
+            Logger.getLogger(CampaignsDao.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
+    
+    public void deleteCampaign(int id) {
+        Campaign cam = this.getCampaignById(id);
+        this.deleteAds(cam.getAds());
+        try {
+            Connection con = connector.getConnection();
+            String query = "DELETE FROM CAMPAIGNS WHERE id = ?";
+            PreparedStatement insertStatement = con.prepareStatement(query);
+            insertStatement.setInt(1, id);
+            insertStatement.executeUpdate();
+            insertStatement.close();
+            con.commit();
+        } catch (SQLException ex) {
+            Logger.getLogger(CampaignsDao.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
+    
+    public void selectAllPlatforms() {
+        try {
+            Connection con = connector.getConnection();
+            String query = "SELECT * FROM PLATFORM";
+            PreparedStatement selectStatement = con.prepareStatement(query);
+            ResultSet rs = selectStatement.executeQuery();
+            System.out.println("PLATFORMS: ");
+            while (rs.next()) {
+                System.out.println("Id " + rs.getInt("name") + " AD REF " + rs.getInt("ad_id"));
+            }
+            selectStatement.close();
+            con.close();
         } catch (SQLException ex) {
             Logger.getLogger(CampaignsDao.class.getName()).log(Level.SEVERE, null, ex);
         }

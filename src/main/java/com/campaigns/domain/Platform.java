@@ -15,4 +15,15 @@ public enum Platform {
     public int getValue() {
         return value;
     }
+    public static Platform fromInteger(int x) {
+        switch(x) {
+        case 0:
+            return WEB;
+        case 1:
+            return ANDROID;
+        case 2:
+            return IOS;
+        }
+        return null;
+    }
 }

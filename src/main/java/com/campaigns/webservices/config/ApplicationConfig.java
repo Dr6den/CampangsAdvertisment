@@ -33,6 +33,12 @@ public class ApplicationConfig extends ResourceConfig
         register(new AbstractBinder() {
             @Override
             protected void configure() {
+                bindAsContract(DatabaseInitializer.class);
+            }
+        });
+        register(new AbstractBinder() {
+            @Override
+            protected void configure() {
                 bind(H2Connector.class).to(IJdbcConnector.class).in(Singleton.class);
             }
         });

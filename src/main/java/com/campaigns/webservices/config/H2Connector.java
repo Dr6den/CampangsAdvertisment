@@ -2,8 +2,6 @@ package com.campaigns.webservices.config;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 
 
@@ -32,10 +30,6 @@ public class H2Connector implements IJdbcConnector {
             System.out.println(e.getMessage());
         }
         return dbConnection;
-    }
-    
-    public void createDatabase() {
-        
     }
     
 }

@@ -15,4 +15,15 @@ public enum Status {
     public int getValue() {
         return value;
     }
+    public static Status fromInteger(int x) {
+        switch(x) {
+        case 1:
+            return ACTIVE;
+        case 2:
+            return PAUSED;
+        case 3:
+            return FINISHED;
+        }
+        return null;
+    }
 }

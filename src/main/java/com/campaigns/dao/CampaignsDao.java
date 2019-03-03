@@ -4,6 +4,7 @@ import com.campaigns.domain.Ad;
 import com.campaigns.domain.Campaign;
 import com.campaigns.domain.Platform;
 import com.campaigns.domain.Status;
+import com.campaigns.domain.Summary;
 import com.campaigns.webservices.config.DatabaseInitializer;
 import com.campaigns.webservices.config.IJdbcConnector;
 import java.sql.Connection;
@@ -29,6 +30,36 @@ public class CampaignsDao {
         this.connector = con;
         this.databaseInitializer = initializer;
         //initializer.createDatabase();
+    }    
+    
+    public List<Summary> getSummary(int limit, String filterByName, String filterByStatus, String sortingParameter) {
+        List<Summary> summaries = new ArrayList<>();
+        try {
+            Connection con = connector.getConnection();
+            String query = "SELECT CAMPAIGNS.id, CAMPAIGNS.name, CAMPAIGNS.status, count(ADS.id) as ads_count FROM CAMPAIGNS JOIN ADS"
+                    + " ON ADS.campaign_id = CAMPAIGNS.id ";
+            if(filterByName != null) {
+                query = query + "WHERE CAMPAIGNS.name = '" + filterByName + "' ";
+            } else if(filterByStatus != null) {
+                query = query + "WHERE CAMPAIGNS.status = '" + filterByStatus + "' ";
+            }
+            query = query + "GROUP BY CAMPAIGNS.id ORDER BY CAMPAIGNS." + sortingParameter +  " DESC LIMIT " + limit;
+            PreparedStatement selectStatement = con.prepareStatement(query);
+            ResultSet rs = selectStatement.executeQuery();
+            while (rs.next()) {
+                Summary summary = new Summary();
+                summary.setId(rs.getInt("id"));
+                summary.setName(rs.getString("name"));
+                summary.setStatus(Status.fromInteger(rs.getInt("status")));
+                summary.setNumberOfAds(rs.getInt("ads_count"));
+                summaries.add(summary);
+            }
+            selectStatement.close();
+            con.close();
+        } catch (SQLException ex) {
+            Logger.getLogger(CampaignsDao.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        return summaries;
     }
     
     public Campaign getCampaignById(int id) {

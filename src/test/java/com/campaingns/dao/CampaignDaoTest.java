@@ -5,6 +5,7 @@ import com.campaigns.domain.Ad;
 import com.campaigns.domain.Campaign;
 import com.campaigns.domain.Platform;
 import com.campaigns.domain.Status;
+import com.campaigns.domain.Summary;
 import com.campaigns.webservices.config.DatabaseInitializer;
 import com.campaigns.webservices.config.H2Connector;
 import com.campaigns.webservices.config.IJdbcConnector;
@@ -12,6 +13,7 @@ import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
@@ -156,5 +158,36 @@ public class CampaignDaoTest {
         campaignsDao.deleteCampaign(updateCampaignId);
         Campaign ucam = campaignsDao.getCampaignById(updateCampaignId);
         assertNull(ucam);
+    }
+    
+    @Test
+    public void getSummaryTest() {
+        List<Summary> summarySortedById = campaignsDao.getSummary(3, null, null, "id");
+        assertNotNull(summarySortedById);
+        assertTrue(summarySortedById.size() == 3);
+        
+        List<Summary> summaryFilteredByName = campaignsDao.getSummary(6, "Inna", null, "id");
+        assertNotNull(summaryFilteredByName);
+        assertTrue(summaryFilteredByName.size() == 1);
+        
+        List<Summary> summaryFilteredByStatus = campaignsDao.getSummary(6, null, "1", "id");
+        assertNotNull(summaryFilteredByStatus);
+        assertTrue(summaryFilteredByStatus.size() > 0);
+        
+        List<Summary> summarySortedByName = campaignsDao.getSummary(2, null, null, "name");
+        assertNotNull(summarySortedByName);
+        assertTrue(summarySortedByName.size() == 2);
+        
+        List<Summary> summarySortedByStatus = campaignsDao.getSummary(2, null, null, "status");
+        assertNotNull(summarySortedByStatus);
+        assertTrue(summarySortedByStatus.size() == 2);
+        
+        List<Summary> summarySortedByCount = campaignsDao.getSummary(2, null, null, "count(ADS.id)");
+        assertNotNull(summarySortedByCount);
+        assertTrue(summarySortedByCount.size() == 2);
+        
+        assertFalse(summarySortedByStatus.containsAll(summarySortedById));
+        assertFalse(summarySortedByStatus.containsAll(summarySortedByCount));
+        assertFalse(summarySortedByName.containsAll(summarySortedByCount));
     }
 }

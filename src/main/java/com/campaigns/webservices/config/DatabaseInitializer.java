@@ -11,7 +11,7 @@ import java.sql.Timestamp;
  * @author andrew
  */
 public class DatabaseInitializer {
-    public void createDatabase() {
+    public static void main(String[] args0) {
         H2Connector connector = new H2Connector();
         Connection con = connector.getConnection();
         PreparedStatement createPlatformStatement = null;
@@ -103,7 +103,7 @@ public class DatabaseInitializer {
         }
     }
     
-    public void executeInsertPlatformStatement(String query, Connection connection, int id, int ad_id) throws SQLException {
+    public static void executeInsertPlatformStatement(String query, Connection connection, int id, int ad_id) throws SQLException {
         PreparedStatement insertStatement = null;
         insertStatement = connection.prepareStatement(query);
         insertStatement.setInt(1, id);
@@ -112,7 +112,7 @@ public class DatabaseInitializer {
         insertStatement.close();
     }
     
-    public int executeInsertAdStatement(String query, Connection connection, String name, int status, String assetUrl, int campaign_id) throws SQLException {
+    public static int executeInsertAdStatement(String query, Connection connection, String name, int status, String assetUrl, int campaign_id) throws SQLException {
         int id = 0;
         String[] columnNames = new String[] { "id" };
         PreparedStatement insertStatement = null;
@@ -131,7 +131,7 @@ public class DatabaseInitializer {
         return id;
     }
     
-    public int executeInserCampaignStatement(String query, Connection connection, String name, int status, Timestamp startDate, Timestamp endDate) throws SQLException {
+    public static int executeInserCampaignStatement(String query, Connection connection, String name, int status, Timestamp startDate, Timestamp endDate) throws SQLException {
         int id = 0;
         String[] columnNames = new String[] { "id" };
         PreparedStatement insertStatement = null;
@@ -150,7 +150,7 @@ public class DatabaseInitializer {
         return id;
     }
     
-    public void selectAllCampaigns(String query, Connection connection) throws SQLException {
+    public static void selectAllCampaigns(String query, Connection connection) throws SQLException {
         PreparedStatement selectStatement = null;
         selectStatement = connection.prepareStatement(query);
         ResultSet rs = selectStatement.executeQuery();
@@ -162,7 +162,7 @@ public class DatabaseInitializer {
         selectStatement.close();
     }
     
-    public void selectAllAds(String query, Connection connection) throws SQLException {
+    public static void selectAllAds(String query, Connection connection) throws SQLException {
         PreparedStatement selectStatement = null;
         selectStatement = connection.prepareStatement(query);
         ResultSet rs = selectStatement.executeQuery();
@@ -174,7 +174,7 @@ public class DatabaseInitializer {
         selectStatement.close();
     }
     
-    public void selectAllPlatforms(String query, Connection connection) throws SQLException {
+    public static void selectAllPlatforms(String query, Connection connection) throws SQLException {
         PreparedStatement selectStatement = null;
         selectStatement = connection.prepareStatement(query);
         ResultSet rs = selectStatement.executeQuery();

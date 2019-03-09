@@ -29,7 +29,7 @@ public class DatabaseInitializer {
         
         String createAdQuery = "CREATE TABLE ADS(id int primary key auto_increment, name varchar(255), status int, asset_url varchar(255), campaign_id INT,"
                 + " FOREIGN KEY (campaign_id)  REFERENCES CAMPAIGNS (id));";
-        String dropAdQuery = "DROP TABLE IF EXISTS AD";
+        String dropAdQuery = "DROP TABLE IF EXISTS ADS";
         String insertAdQuery = "INSERT INTO ADS" + "(name, status, asset_url, campaign_id) values" + "(?,?,?,?)";
         String selectAdQuery = "select * from ADS";
         
